@@ -1,5 +1,5 @@
 // Verifică dacă e deja logat
-const session = localStorage.getItem('salvamont_session');
+const session = localStorage.getItem('salvamont_user');
 if (session) {
     window.location.href = 'dashboard.html';
 }
@@ -24,9 +24,11 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
         if (error) throw error;
 
-        localStorage.setItem('salvamont_session', JSON.stringify({
+        localStorage.setItem('salvamont_user', JSON.stringify({
             id: data.user.id,
             email: data.user.email,
+            name: data.user.user_metadata?.name || data.user.email,
+            username: data.user.email,
             token: data.session.access_token
         }));
 
