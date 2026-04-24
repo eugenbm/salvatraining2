@@ -30,8 +30,14 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
             throw new Error('Username sau parolă incorectă!');
         }
 
-        // ✅ Verifică parola cu dcrypt (bcryptjs în browser)
-        const isValid = await dcrypt.compare(password, data.password);
+        // ✅ Fix compatibilitate $2y$ (PHP) → $2b$ (bcryptjs)
+        let hashFromDB = data.password;
+        if (hashFromDB.startsWith('$2y$')) {
+            hashFromDB = hashFromDB.replace('$2y$', '$2b$');
+        }
+
+        // ✅ CORECT - bcrypt nu dcrypt!
+        const isValid = await bcrypt.compare(password, hashFromDB);
 
         if (!isValid) {
             throw new Error('Username sau parolă incorectă!');
