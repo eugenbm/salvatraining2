@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Salvator Montan</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 50%, #1a3a2a 100%);
+      min-height: 100vh;
+      color: #f0f0f0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      text-align: center;
+      padding: 30px 0 20px;
+    }
+    .header h1 {
+      font-size: 2rem;
+      color: #a8d5b5;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: #c8e6c9;
+      font-size: 0.95rem;
+    }
+
+    /* ===== MODULE SELECTION ===== */
+    #module-screen {
+      display: block;
+    }
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-top: 30px;
+    }
+    .module-card {
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(168,213,181,0.3);
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .module-card:hover {
+      background: rgba(168,213,181,0.15);
+      border-color: #a8d5b5;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .module-card .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .module-card h3 { color: #a8d5b5; font-size: 1rem; margin-bottom: 6px; }
+    .module-card p { color: #9ab8a0; font-size: 0.82rem; }
+
+    /* ===== QUIZ SCREEN ===== */
+    #quiz-screen { display: none; }
+
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .quiz-title { color: #a8d5b5; font-size: 1.1rem; font-weight: 600; }
+    .quiz-progress { color: #c8e6c9; font-size: 0.9rem; }
+
+    .progress-bar-wrap {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      height: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4caf50, #a8d5b5);
+      border-radius: 10px;
+      transition: width 0.4s ease;
+    }
+
+    .question-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(168,213,181,0.2);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .question-text {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: #e8f5e9;
+      margin-bottom: 22px;
+    }
+
+    .options-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .option-item {
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(168,213,181,0.2);
+      border-radius: 10px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .option-item:hover:not(.disabled) {
+      background: rgba(168,213,181,0.12);
+      border-color: #a8d5b5;
+    }
+    .option-item.correct {
+      background: rgba(76,175,80,0.25);
+      border-color: #4caf50;
+      color: #c8e6c9;
+    }
+    .option-item.wrong {
+      background: rgba(244,67,54,0.2);
+      border-color: #f44336;
+      color: #ffcdd2;
+    }
+    .option-item.disabled { cursor: default; }
+    .option-letter {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(168,213,181,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+      color: #a8d5b5;
+    }
+    .option-item.correct .option-letter { background: #4caf50; color: #fff; }
+    .option-item.wrong .option-letter { background: #f44336; color: #fff; }
+
+    .feedback-box {
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      display: none;
+    }
+    .feedback-box.correct { background: rgba(76,175,80,0.15); border: 1px solid #4caf50; color: #c8e6c9; }
+    .feedback-box.wrong { background: rgba(244,67,54,0.12); border: 1px solid #f44336; color: #ffcdd2; }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #4caf50, #388e3c);
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(76,175,80,0.4); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #a8d5b5;
+      border: 1px solid rgba(168,213,181,0.3);
+    }
+    .btn-secondary:hover { background: rgba(168,213,181,0.15); }
+
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* ===== RESULT SCREEN ===== */
+    #result-screen { display: none; }
+    .result-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(168,213,181,0.2);
+      border-radius: 20px;
+      padding: 40px 30px;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .score-circle {
+      width: 130px; height: 130px;
+      border-radius: 50%;
+      margin: 0 auto 24px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 2.2rem; font-weight: 700;
+      border: 6px solid;
+    }
+    .score-circle.pass { border-color: #4caf50; color: #4caf50; background: rgba(76,175,80,0.1); }
+    .score-circle.fail { border-color: #f44336; color: #f44336; background: rgba(244,67,54,0.1); }
+    .score-circle span { font-size: 0.75rem; font-weight: 400; color: #9ab8a0; }
+    .result-title { font-size: 1.5rem; color: #a8d5b5; margin-bottom: 10px; }
+    .result-subtitle { color: #9ab8a0; margin-bottom: 30px; }
+
+    .review-list { text-align: left; margin-top: 30px; }
+    .review-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid;
+    }
+    .review-item.correct { border-color: #4caf50; }
+    .review-item.wrong { border-color: #f44336; }
+    .review-item .rq { font-size: 0.9rem; color: #c8e6c9; margin-bottom: 6px; }
+    .review-item .ra { font-size: 0.85rem; }
+    .review-item .ra.ok { color: #a5d6a7; }
+    .review-item .ra.bad { color: #ef9a9a; }
+    .review-item .rc { font-size: 0.85rem; color: #a5d6a7; }
+
+    .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+
+    @media (max-width: 600px) {
+      .header h1 { font-size: 1.5rem; }
+      .question-card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>🏔️ Test Salvator Montan</h1>
+    <p>Selectează un modul pentru a începe testul (10 întrebări aleatoare din 60)</p>
+  </div>
+
+  <!-- ===== MODULE SCREEN ===== -->
+  <div id="module-screen">
+    <div class="module-grid">
+      <div class="module-card" onclick="startQuiz(0)">
+        <div class="icon">🧰</div>
+        <h3>Modulul 1</h3>
+        <p>Materiale folosite în salvarea montană</p>
+      </div>
+      <div class="module-card" onclick="startQuiz(1)">
+        <div class="icon">🪢</div>
+        <h3>Modulul 2</h3>
+        <p>Noduri, asigurări și tehnici de cățărare</p>
+      </div>
+      <div class="module-card" onclick="startQuiz(2)">
+        <div class="icon">🚑</div>
+        <h3>Modulul 3</h3>
+        <p>Rapel, tracțiune și transport accidentați</p>
+      </div>
+      <div class="module-card" onclick="startQuiz(3)">
+        <div class="icon">❄️</div>
+        <h3>Modulul 4</h3>
+        <p>Avalanșe – clasificare, cauze și salvare</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== QUIZ SCREEN ===== -->
+  <div id="quiz-screen">
+    <div class="quiz-header">
+      <div class="quiz-title" id="quiz-module-title"></div>
+      <div class="quiz-progress" id="quiz-progress-text"></div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="question-card">
+      <div class="question-text" id="question-text"></div>
+      <ul class="options-list" id="options-list"></ul>
+      <div class="feedback-box" id="feedback-box"></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-secondary" onclick="goHome()">← Înapoi la module</button>
+      <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()" style="display:none">Următoarea →</button>
+    </div>
+  </div>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <div id="result-screen">
+    <div class="result-card">
+      <div class="score-circle" id="score-circle">
+        <span id="score-num"></span>
+        <span>din 10</span>
+      </div>
+      <div class="result-title" id="result-title"></div>
+      <div class="result-subtitle" id="result-subtitle"></div>
+      <div class="result-actions">
+        <button class="btn btn-primary" onclick="retakeQuiz()">🔄 Reia testul</button>
+        <button class="btn btn-secondary" onclick="goHome()">🏠 Alege alt modul</button>
+      </div>
+      <div class="review-list" id="review-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =====================================================================
+// BAZA DE DATE – 60 întrebări × 4 module
+// =====================================================================
+
+const modules = [
+
+  // ─────────────────────────────────────────────────────────────────
+  // MODULUL 1 – Materiale folosite în salvarea montană (60 întrebări)
+  // ─────────────────────────────────────────────────────────────────
+  {
+    title: "Modulul 1 – Materiale folosite în salvarea montană",
+    questions: [
+      // 1-10: Corzi
+      { q: "Care este rezistența corzii dinamice folosite în salvarea montană (Ø11mm)?", a: "23,6 KN", opts: ["29,2 KN","38 KN","50 KN"], exp: "Coarda dinamică are rezistența de 23,6 KN, conform listei de materiale CISA-IKAR." },
+      { q: "Care este rezistența corzii statice folosite în salvarea montană (Ø11mm)?", a: "29,2 KN", opts: ["23,6 KN","38 KN","20 KN"], exp: "Coarda statică are rezistența de 29,2 KN." },
+      { q: "Ce lungime au corzile (dinamică și statică) din dotarea echipei de salvare montană?", a: "80 ml", opts: ["50 ml","100 ml","60 ml"], exp: "Ambele corzi au câte 80 ml lungime conform listei standard." },
+      { q: "Ce tip de coardă se folosește preferențial pentru balustrade în salvarea montană?", a: "Coarda statică", opts: ["Coarda dinamică","Semicoarda dinamică","Coarda de polipropilenă"], exp: "Balustradele se realizează preferențial cu coardă statică." },
+      { q: "Ce diametru minim trebuie să aibă coarda pentru tehnica de coborâre (lansare)?", a: "10,5 mm", opts: ["8 mm","9 mm","12 mm"], exp: "Procedeul de coborâre se execută pe corzi cu diametrul de minim 10,5 mm." },
+      { q: "Ce rezistență minimă trebuie să aibă coarda pentru tehnica de coborâre (lansare)?", a: "Peste 20 KN", opts: ["Peste 10 KN","Peste 15 KN","Peste 30 KN"], exp: "Coarda trebuie să aibă rezistența de peste 20 KN pentru lansare." },
+      { q: "Câte corzi dinamice are în dotare o echipă standard de 6 salvatori montani (sezon vară)?", a: "1 (80 ml)", opts: ["2 (câte 40 ml)","3 (câte 30 ml)","Niciuna"], exp: "Lista standard prevede o singură coardă dinamică de 80 ml." },
+      { q: "Ce tip de coardă se folosește pentru rapel în salvarea montană?", a: "Ambele tipuri (statică sau dinamică)", opts: ["Doar coarda statică","Doar coarda dinamică","Coarda de polipropilenă"], exp: "Rapelul se poate executa pe ambele tipuri de coardă." },
+      { q: "Câte corzi statice are în dotare o echipă standard de 6 salvatori montani (sezon vară)?", a: "1 (80 ml)", opts: ["2","3","Niciuna"], exp: "Lista standard prevede o singură coardă statică de 80 ml." },
+      { q: "Ce proprietate importantă trebuie să aibă coarda dinamică față de cea statică?", a: "Este elastică (absoarbe șocul)", opts: ["Este mai rezistentă","Este mai ușoară","Este impermeabilă"], exp: "Coarda dinamică este extensibilă și absoarbe energia unui șoc la cădere." },
+
+      // 11-20: Carabiniere & Role
+      { q: "Care este rezistența carabinierei cu siguranță din dotarea echipei de salvare?", a: "38 KN", opts: ["20 KN","50 KN","25 KN"], exp: "Carabinierele cu siguranță au rezistența de 38 KN." },
+      { q: "Câte carabiniere cu siguranță are în dotare o echipă standard de salvare montană (vară)?", a: "10 buc", opts: ["6 buc","20 buc","4 buc"], exp: "Lista standard prevede 10 carabiniere cu siguranță." },
+      { q: "Câte carabiniere expres are în dotare o echipă standard de salvare montană (vară)?", a: "20 buc", opts: ["10 buc","6 buc","30 buc"], exp: "Lista standard prevede 20 carabiniere expres." },
+      { q: "Care este rezistența rolei simple din dotarea echipei de salvare montană?", a: "30 KN", opts: ["20 KN","50 KN","38 KN"], exp: "Rolele simple au rezistența de 30 KN." },
+      { q: "Care este rezistența rolei duble din dotarea echipei de salvare montană?", a: "50 KN", opts: ["30 KN","38 KN","20 KN"], exp: "Rolele duble au rezistența de 50 KN." },
+      { q: "Câte role simple are în dotare o echipă standard de salvare montană (vară)?", a: "4 buc", opts: ["2 buc","6 buc","8 buc"], exp: "Lista standard prevede 4 role simple." },
+      { q: "Câte role duble are în dotare o echipă standard de salvare montană (vară)?", a: "2 buc", opts: ["4 buc","1 buc","6 buc"], exp: "Lista standard prevede 2 role duble." },
+      { q: "La ce se folosesc rolele în salvarea montană?", a: "La funiculare și sisteme de tracțiune", opts: ["Doar la rapel","Doar la asigurare","La comunicații"], exp: "Rolele sunt folosite în sistemele de funicular și tracțiune." },
+      { q: "Ce tip de carabinieră nu necesită deschiderea manuală a siguranței?", a: "Carabiniera expres", opts: ["Carabiniera cu siguranță","Carabiniera din oțel","Carabiniera de aluminiu"], exp: "Carabinierele expres nu au siguranță și permit conectare rapidă." },
+      { q: "Din ce materiale sunt confecționate carabinierele de salvare montană?", a: "Aluminiu sau oțel", opts: ["Doar aluminiu","Doar oțel","Titan sau plastic"], exp: "Carabinierele sunt din aluminiu cu siguranță sau din oțel cu siguranță." },
+
+      // 21-30: Pitoaie & Scărițe
+      { q: "Câte pitoaie (diferite) are în dotare o echipă standard de salvare montană (vară)?", a: "14 buc", opts: ["10 buc","20 buc","6 buc"], exp: "Lista standard prevede 14 pitoaie diferite." },
+      { q: "Câte scărițe are în dotare o echipă standard de salvare montană (vară)?", a: "8 buc", opts: ["4 buc","6 buc","10 buc"], exp: "Lista standard prevede 8 scărițe." },
+      { q: "Care este lungimea scărițelor din dotarea echipei de salvare montană?", a: "120-150 cm", opts: ["80-100 cm","60-80 cm","200 cm"], exp: "Scărițele au lungimea de 120-150 cm." },
+      { q: "Unde se folosesc pitoanele de expansiune?", a: "Acolo unde nu există fisuri, cu bormașina", opts: ["Doar în fisuri largi","Doar pe gheață","Doar pe zăpadă"], exp: "Pitoanele de expansiune se fixează cu bormașina acolo unde nu există fisuri." },
+      { q: "Unde se folosesc nucile în salvarea montană?", a: "În fisuri mai largi unde nu se pot fixa alte pitoaie", opts: ["Pe suprafețe plane","Pe gheață","Pe zăpadă"], exp: "Nucile se folosesc în fisuri mai largi în care nu se pot fixa alte pitoaie." },
+      { q: "Ce sunt tendoarele în salvarea montană?", a: "Dispozitive de fixare reglabile pentru fisuri cu deschidere mai mare", opts: ["Tipuri de carabiniere","Tipuri de blocatoare","Tipuri de corzi"], exp: "Tendoarele sunt dispozitive de fixare reglabile pentru fisuri cu deschidere mai mare." },
+      { q: "Cum se fixează pitoanele de gheață?", a: "Prin răsucire (formă de tirbuşon)", opts: ["Prin batere cu ciocanul","Cu bormașina","Cu adeziv special"], exp: "Pitoanele de gheață au formă de tirbuşon și se fixează prin răsucire." },
+      { q: "Câte ciocane are în dotare o echipă standard de salvare montană (vară)?", a: "2 buc", opts: ["1 buc","4 buc","6 buc"], exp: "Lista standard prevede 2 ciocane." },
+      { q: "La ce se folosește ciocanul în salvarea montană?", a: "La fixarea sau extragerea pitoaielor", opts: ["La tăierea corzilor","La comunicații","La transport accidentați"], exp: "Ciocanul este folosit la fixarea sau extragerea pitoaielor." },
+      { q: "Cu ce lungime de cordelină se leagă ciocanul de salvatorul montan?", a: "1,5 m", opts: ["0,5 m","2 m","3 m"], exp: "Ciocanul se leagă de salvatorul montan cu o cordelină de 1,5 m." },
+
+      // 31-40: Echipament personal & transport
+      { q: "Câte veste complete are în dotare o echipă standard de 6 salvatori montani?", a: "6 buc", opts: ["3 buc","4 buc","8 buc"], exp: "Fiecare salvator are propria vestă completă, deci 6 buc." },
+      { q: "Care este rezistența vestei complete din dotarea salvatorilor montani?", a: "10-16 KN", opts: ["5-8 KN","20-25 KN","38 KN"], exp: "Vesta completă are rezistența de 10-16 KN." },
+      { q: "Ce tip de targă universală se folosește în salvarea montană?", a: "Targă universală cu roată (UT 2000, Alpină, Tiromont, Mariner)", opts: ["Targă rigidă fără roată","Targă improvizată din lemn","Saltea gonflabilă"], exp: "Se folosesc tărgi universale cu roată de tip UT 2000, Alpină, Tiromont, Mariner." },
+      { q: "Ce tip de ham de transport se folosește în salvarea montană?", a: "Ham tip GRAMINGHER", opts: ["Ham tip alpinist","Ham tip pompier","Ham improvizat"], exp: "Hamul de transport folosit este de tip GRAMINGHER." },
+      { q: "Câte blocatoare are în dotare o echipă standard de salvare montană (vară)?", a: "2 buc", opts: ["4 buc","6 buc","1 buc"], exp: "Lista standard prevede 2 blocatoare." },
+      { q: "Câte coborâtoare opt are în dotare o echipă standard de salvare montană (vară)?", a: "6 buc", opts: ["2 buc","4 buc","8 buc"], exp: "Lista standard prevede 6 coborâtoare opt (câte unul per salvator)." },
+      { q: "Câte bucle diferite are în dotare o echipă standard de salvare montană (vară)?", a: "6 buc", opts: ["4 buc","10 buc","2 buc"], exp: "Lista standard prevede 6 bucle diferite." },
+      { q: "Ce putere are bormașina portabilă din dotarea echipei de salvare montană?", a: "24 W – 4 amperi", opts: ["50 W – 8 amperi","12 W – 2 amperi","100 W – 10 amperi"], exp: "Bormașina portabilă are 24 W și 4 amperi." },
+      { q: "Câte RTP-uri (radio) are în dotare o echipă standard de salvare montană?", a: "6 buc", opts: ["2 buc","4 buc","8 buc"], exp: "Lista standard prevede 6 RTP-uri." },
+      { q: "Pe ce frecvență funcționează RTP-urile echipei de salvare montană?", a: "160 MHz / 149,20 MHz", opts: ["457 KHz","2275 Hz","900 MHz"], exp: "RTP-urile funcționează pe frecvența 160 MHz / 149,20 MHz." },
+
+      // 41-50: Echipament iarnă & avalanșă
+      { q: "Ce aparat electronic de detectare a victimelor din avalanșă este în dotarea salvatorilor montani?", a: "PIEPS 457", opts: ["GPS montan","Detector de metale","Sonar subacvatic"], exp: "PIEPS 457 este aparatul electronic de detectare a victimelor din avalanșă." },
+      { q: "Pe ce frecvență funcționează PIEPS 457?", a: "457 KHz", opts: ["160 MHz","2275 Hz","900 MHz"], exp: "PIEPS 457 funcționează pe frecvența internațională de 457 KHz." },
+      { q: "Din câte segmente este compusă sonda de avalanșă și ce lungime totală realizează?", a: "Mai multe segmente – 3 m total", opts: ["2 segmente – 1,5 m","5 segmente – 5 m","1 segment – 2 m"], exp: "Sonda de avalanșă este compusă din mai multe segmente care realizează 3 m lungime." },
+      { q: "Câte lopete de avalanșă are în dotare o echipă standard de salvare montană (iarnă)?", a: "6 buc", opts: ["2 buc","4 buc","1 buc"], exp: "Lista de iarnă prevede 6 lopete de avalanșă." },
+      { q: "Câte sonde de avalanșă are în dotare o echipă standard de salvare montană (iarnă)?", a: "6 buc (3 ml fiecare)", opts: ["2 buc","4 buc","1 buc"], exp: "Lista de iarnă prevede 6 sonde de avalanșă de câte 3 ml." },
+      { q: "Ce materiale suplimentare are echipa de salvare montană în sezonul de iarnă față de vară?", a: "Aparatură de căutare în avalanșă (PIEPS, sondă, lopată, trusă)", opts: ["Doar schiuri","Doar coltari","Doar piolete"], exp: "Sezonul de iarnă adaugă categoria 'Aparatură de căutare în avalanșă'." },
+      { q: "Ce pot forma betele telescopice de avalanșă?", a: "O sondă de avalanșă de 3 m", opts: ["Un funicular","O balustradă","Un sistem de tracțiune"], exp: "Dintr-o pereche de bete telescopice se poate realiza o sondă de avalanșă de 3 m." },
+      { q: "Câte lanterne frontale are în dotare o echipă standard de salvare montană?", a: "6 buc", opts: ["2 buc","4 buc","1 buc"], exp: "Lista standard prevede 6 lanterne frontale cu baterii alcaline." },
+      { q: "Câte pistoale de rachete are în dotare o echipă standard de salvare montană?", a: "2 buc", opts: ["1 buc","4 buc","6 buc"], exp: "Lista standard prevede 2 pistoale de rachete." },
+      { q: "Ce putere au proiectoarele portabile din dotarea echipei de salvare montană?", a: "20 W (halogen)", opts: ["50 W","100 W","10 W"], exp: "Proiectoarele portabile sunt de 20 W halogen." },
+
+      // 51-60: Materiale auxiliare & tărgi
+      { q: "Care sunt cele 3 tipuri de blocatoare din salvarea montană?", a: "Cu mâner, fără mâner, Grigri", opts: ["Prusik, Grigri, Opt","Cabestan, Prusik, Grigri","Opt, Prusik, Cabestan"], exp: "Blocatoarele se împart în: cu mâner, fără mâner și Grigri." },
+      { q: "Pe câte fire de coardă funcționează blocatorul cu mâner?", a: "Doar pe un fir de coardă", opts: ["Pe două fire","Pe trei fire","Pe orice număr de fire"], exp: "Blocatorul cu mâner funcționează doar pe un fir de coardă." },
+      { q: "Pe câte fire de coardă poate funcționa blocatorul fără mâner?", a: "Pe un fir sau pe două fire de coardă", opts: ["Doar pe un fir","Doar pe două fire","Pe trei fire"], exp: "Blocatorul fără mâner poate funcționa pe un fir sau pe două fire de coardă." },
+      { q: "Care sunt principalele utilizări ale optului de coborâre?", a: "Coborârea în rapel și asigurarea coechipierilor", opts: ["Doar rapelul","Doar asigurarea","Doar tracțiunea"], exp: "Optul de coborâre se folosește la rapel și la asigurarea în deplasare a coechipierilor." },
+      { q: "Ce este targa AKJA?", a: "Un tip de targă de transport al accidentaților", opts: ["Un tip de blocator","Un tip de carabinieră","Un tip de coardă"], exp: "AKJA este un tip de targă pentru transportul accidentaților." },
+      { q: "Ce este sacul de transport GRAMINGHER?", a: "Un ham/sac de transport al accidentaților", opts: ["Un tip de targă rigidă","Un tip de blocator","Un tip de coardă"], exp: "GRAMINGHER este un ham/sac de transport al accidentaților." },
+      { q: "Ce este saltea cu vacuum în salvarea montană?", a: "Un dispozitiv de imobilizare și transport al accidentaților", opts: ["Un tip de cort","Un tip de sac de dormit","Un tip de targă rigidă"], exp: "Saltea cu vacuum este un dispozitiv de imobilizare și transport al accidentaților." },
+      { q: "Ce este Stibt-ul în salvarea montană?", a: "Un dispozitiv de frânare/asigurare", opts: ["Un tip de carabinieră","Un tip de piton","Un tip de coardă"], exp: "Stibt-ul este un dispozitiv de frânare și asigurare." },
+      { q: "Ce este troliul în salvarea montană?", a: "Un dispozitiv mecanic de tracțiune", opts: ["Un tip de targă","Un tip de blocator","Un tip de coardă"], exp: "Troliul este un dispozitiv mecanic de tracțiune folosit în salvarea montană." },
+      { q: "Pentru câți salvatori montani este realizată lista standard de materiale de salvare montană?", a: "6 salvatori", opts: ["4 salvatori","8 salvatori","10 salvatori"], exp: "Lista standard de materiale este realizată pentru o echipă de 6 salvatori montani." },
+    ]
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // MODULUL 2 – Noduri, asigurări și tehnici de cățărare (60 întrebări)
+  // ─────────────────────────────────────────────────────────────────
+  {
+    title: "Modulul 2 – Noduri, asigurări și tehnici de cățărare",
+    questions: [
+      // 1-10: Noduri generale
+      { q: "Care nod este supranumit 'regele nodurilor' în salvarea montană?", a: "Nodul în opt", opts: ["Nodul Prusik","Nodul Bulin","Nodul cabestan"], exp: "Nodul în opt este supranumit pe drept 'regele nodurilor'." },
+      { q: "Ce condiții trebuie să îndeplinească orice nod folosit în salvarea montană?", a: "Să fie elastic, să nu se deformeze la tracțiune, să nu se desfacă sub sarcină, să nu alunece", opts: ["Să fie ușor de dezlegat","Să fie colorat","Să fie din material sintetic"], exp: "Un nod trebuie să fie elastic, să nu se deformeze, să nu se desfacă sub sarcină și să nu alunece." },
+      { q: "Când se consideră că un nod este însușit foarte bine?", a: "Când poate fi realizat în orice poziție, în orice condiții, chiar și cu o singură mână", opts: ["Când poate fi realizat în 5 minute","Când poate fi realizat cu ambele mâini","Când poate fi realizat doar ziua"], exp: "Un nod este bine însușit când poate fi realizat în orice condiții, chiar și pe întuneric, cu o singură mână." },
+      { q: "În câte categorii se clasifică nodurile folosite în operațiunile de salvare?", a: "4 categorii", opts: ["2 categorii","3 categorii","5 categorii"], exp: "Nodurile se clasifică în 4 categorii: de legare în coardă, de asigurare, de înnădire și de amarare." },
+      { q: "Care sunt cele 4 categorii de noduri folosite în salvarea montană?", a: "De legare în coardă, de asigurare/autoasigurare, de legare a două corzi, de amarare/ancorare", opts: ["Prusik, Bulin, Opt, Cabestan","Simple, Duble, Triple, Speciale","Statice, Dinamice, Mixte, Speciale"], exp: "Cele 4 categorii sunt: de legare în coardă, de asigurare, de înnădire și de amarare." },
+      { q: "Ce nod de asigurare/autoasigurare are dezavantajul că nu poate fi făcut decât cu ambele mâini?", a: "Nodul opt dublu", opts: ["Nodul opt simplu","Nodul Prusik","Nodul cabestan"], exp: "Nodul opt dublu este sigur dar nu poate fi realizat decât cu ambele mâini." },
+      { q: "Ce dezavantaj are nodul opt simplu sub sarcină mare?", a: "Se strânge și desfacerea lui este anevoioasă", opts: ["Se desfacere singur","Alunecă pe coardă","Nu rezistă la tracțiune"], exp: "Nodul opt simplu sub sarcină mare se strânge și este greu de desfăcut." },
+      { q: "Ce nod de urcare pe coardă se folosește în salvarea montană?", a: "Nodul Prusik", opts: ["Nodul Bulin","Nodul pescăresc","Nodul pătrat"], exp: "Nodul Prusik este nodul de urcare pe coardă folosit în salvarea montană." },
+      { q: "Ce nod este folosit la asigurarea dinamică în salvarea montană?", a: "Nodul semicabestan", opts: ["Nodul Prusik","Nodul Bulin","Nodul pătrat"], exp: "Nodul semicabestan se folosește la asigurarea dinamică." },
+      { q: "Ce nod se folosește la înnădirea a două corzi sub tensiune?", a: "Nodul pentru legarea a două corzi sub tensiune", opts: ["Nodul Bulin","Nodul pătrat","Nodul pescăresc simplu"], exp: "Există un nod specific pentru legarea a două corzi sub tensiune." },
+
+      // 11-20: Noduri specifice
+      { q: "Ce nod se folosește la autoasigurarea salvatorilor în regrupare?", a: "Nodul cabestan sau nodul opt simplu/dublu", opts: ["Nodul Prusik","Nodul Bulin","Nodul pescăresc"], exp: "Autoasigurarea în regrupare se face cu nodul cabestan sau nodul opt." },
+      { q: "Ce nod se folosește la punctul de asigurare A al funicular (corzi fixe)?", a: "Nodul opt simplu", opts: ["Nodul semicabestan","Nodul Prusik","Nodul Bulin"], exp: "La punctul A se folosește nodul opt simplu pentru ancorarea corzilor fixe." },
+      { q: "Ce nod se folosește la punctul B al funicular (asigurarea tărgii)?", a: "Nodul semicabestan", opts: ["Nodul opt simplu","Nodul Prusik","Nodul Bulin"], exp: "La punctul B se folosește nodul semicabestan pentru asigurarea tărgii." },
+      { q: "Ce nod se folosește la punctul C al funicular (ancorarea corzilor fixe)?", a: "Nodul de blocare", opts: ["Nodul opt simplu","Nodul semicabestan","Nodul Prusik"], exp: "La punctul C se folosește nodul de blocare pentru ancorarea corzilor fixe." },
+      { q: "Ce nod dublu pescăresc se folosește în salvarea montană?", a: "La înnădirea a două corzi", opts: ["La autoasigurare","La urcare pe coardă","La amarare"], exp: "Nodul dublu pescăresc se folosește la înnădirea (legarea) a două corzi." },
+      { q: "Ce este nodul Prusik cu carabinieră?", a: "O variantă a nodului Prusik care folosește o carabinieră", opts: ["Un tip de blocator mecanic","Un tip de nod de amarare","Un tip de nod de legare în coardă"], exp: "Nodul Prusik cu carabinieră este o variantă a nodului Prusik standard." },
+      { q: "Ce este 'Nodul L' în salvarea montană?", a: "Nodul de blocare pe coardă", opts: ["Nodul de legare în coardă","Nodul de amarare","Nodul de înnădire"], exp: "'Nodul L' este nodul de blocare pe coardă, folosit la urcare." },
+      { q: "Ce nod se folosește la asigurarea statică cu ajutorul optului de coborâre?", a: "Nodul opt de coborâre", opts: ["Nodul semicabestan","Nodul Prusik","Nodul Bulin"], exp: "Asigurarea statică se poate face cu ajutorul nodului opt de coborâre." },
+      { q: "Ce nod se folosește la asigurarea statică cu ajutorul grigri-ului?", a: "Grigri-ul (dispozitiv autoblocant)", opts: ["Nodul semicabestan","Nodul Prusik","Nodul opt"], exp: "Grigri-ul este un dispozitiv autoblocant folosit la asigurarea statică." },
+      { q: "Ce nod de scaun se folosește în salvarea montană?", a: "La amarare/ancorare", opts: ["La legare în coardă","La asigurare dinamică","La urcare pe coardă"], exp: "Nodul de scaun se folosește la amarare/ancorare." },
+
+      // 21-30: Amaraje & asigurări
+      { q: "Care este cea mai importantă operațiune tehnică în salvarea montană?", a: "Amenajarea punctului de amaraj", opts: ["Rapelul","Cățărarea artificială","Transportul accidentaților"], exp: "Amenajarea punctului de amaraj este cea mai importantă operațiune tehnică în salvarea montană." },
+      { q: "Ce forțe pot acționa în punctul de amaraj în salvarea montană?", a: "Până la 2000-2500 kgF", opts: ["Până la 500 kgF","Până la 1000 kgF","Până la 5000 kgF"], exp: "Forțele în punctul de amaraj pot ajunge până la 2000-2500 kgF." },
+      { q: "Câte puncte fixe se recomandă minimum pentru un amaraj sigur?", a: "Cel puțin 2 puncte fixe", opts: ["1 punct fix","3 puncte fixe","4 puncte fixe"], exp: "Se recomandă amenajarea amarajului în cel puțin 2 puncte fixe." },
+      { q: "Ce se folosește la amarajul în 2 puncte în salvarea montană?", a: "Buclă de chingă", opts: ["Coardă dinamică","Piton de expansiune","Blocator"], exp: "Amarajul în 2 puncte se realizează folosind o buclă de chingă." },
+      { q: "Ce materiale se folosesc la amarajul în 3 puncte fixe (faza 1)?", a: "Nuc (a), piton (b), buclă (c)", opts: ["3 pitoaie de expansiune","3 nuci","3 tendoare"], exp: "Amarajul în 3 puncte folosește: nuc, piton și buclă." },
+      { q: "Unde se realizează autoasigurarea echipei în regrupare?", a: "În punctul de amaraj", opts: ["Unul de celălalt","La baza peretelui","La vârful peretelui"], exp: "Autoasigurarea se face în punctul de amaraj, nu unul de celălalt." },
+      { q: "Ce lungime și diametru are bucla de coardă pentru autoasigurare?", a: "Diametru 8 mm, lungime 1-1,5 m", opts: ["Diametru 10 mm, lungime 2 m","Diametru 6 mm, lungime 0,5 m","Diametru 11 mm, lungime 3 m"], exp: "Bucla de autoasigurare are diametrul de 8 mm și lungimea de 1-1,5 m." },
+      { q: "Ce tip de asigurare se realizează la baza unui perete sau în regrupare?", a: "Asigurarea statică", opts: ["Asigurarea dinamică","Autoasigurarea","Asigurarea cu balustradă"], exp: "Asigurarea statică se realizează la baza unui perete sau în regrupare." },
+      { q: "Cum se realizează asigurarea cu balustradă?", a: "O coardă statică fixată între două puncte de ancoraj, cu puncte intermediare", opts: ["O coardă dinamică legată de un singur punct","O buclă de chingă","Un sistem de role"], exp: "Balustrada este o coardă statică fixată între două puncte de ancoraj cu puncte intermediare." },
+      { q: "Cum se ancorează salvatorul pe balustradă?", a: "Prin nodul Prusik sau blocator", opts: ["Prin carabinieră directă","Prin nodul opt","Prin nodul Bulin"], exp: "Salvatorul se ancorează pe balustradă prin nodul Prusik sau blocator." },
+
+      // 31-40: Tehnici de cățărare
+      { q: "Ce este cățărarea liberă în salvarea montană?", a: "Cățărarea naturală cu utilizarea prizelor naturale", opts: ["Cățărarea cu ajutorul scărițelor","Cățărarea cu ajutorul pitoaielor","Cățărarea cu ajutorul blocatoarelor"], exp: "Cățărarea liberă (naturală) folosește prizele naturale fără ajutorul materialelor artificiale." },
+      { q: "Care sunt tipurile de prize folosite în cățărarea liberă?", a: "De tracțiune, de imprimare, de aderență, de sprijin, chei", opts: ["Statice și dinamice","Naturale și artificiale","Superioare și inferioare"], exp: "Prizele în cățărarea liberă sunt: de tracțiune, de imprimare, de aderență, de sprijin și chei." },
+      { q: "Ce este cățărarea artificială în salvarea montană?", a: "Cățărarea cu ajutorul materialelor artificiale (scărițe, pitoaie)", opts: ["Cățărarea pe perete artificial","Cățărarea cu ajutorul elicopterului","Cățărarea pe zăpadă"], exp: "Cățărarea artificială folosește materiale artificiale precum scărițele și pitoaiele." },
+      { q: "Ce procedeu se folosește pentru traversarea unui perete vertical lipsit de prize?", a: "Procedeul Dülfer de traversare pe rapel dirijat sau prin pendulare", opts: ["Cățărarea liberă","Cățărarea artificială","Rapelul simplu"], exp: "Traversarea unui perete vertical fără prize se face prin procedeul Dülfer." },
+      { q: "Care sunt principiile de bază ale cățărării libere?", a: "Indiferent de sens, salvatorul trebuie să respecte câteva principii de bază", opts: ["Să urce cât mai repede","Să nu folosească corzi","Să urce doar ziua"], exp: "Există principii de bază ale cățărării libere pe care salvatorul trebuie să le respecte." },
+      { q: "Ce este o traversare în alpinism?", a: "Deplasarea laterală pe un perete, nu vertical", opts: ["Coborârea pe rapel","Urcarea pe coardă","Transportul accidentaților"], exp: "Traversarea este deplasarea laterală pe un perete sau pantă." },
+      { q: "Ce tip de asigurare se face în deplasarea în echipă pe teren dificil?", a: "Asigurarea dinamică", opts: ["Asigurarea statică","Autoasigurarea","Asigurarea cu balustradă"], exp: "În deplasarea echipelor se practică asigurarea dinamică." },
+      { q: "Ce se montează pe coardă pentru siguranță la coborâre (lansare)?", a: "Nodul Prusik sau un blocator", opts: ["Nodul opt","Nodul Bulin","Nodul cabestan"], exp: "La ieșirea corzii din pilonul de asigurare se montează nodul Prusik sau un blocator." },
+      { q: "Ce nod NU este recomandat la asigurarea celui care coboară (lansare)?", a: "Nodul opt", opts: ["Nodul semicabestan","Nodul Prusik","Blocatorul"], exp: "La coborâre (lansare) nu este recomandat nodul opt." },
+      { q: "Ce nod se recomandă la asigurarea celui care coboară (lansare)?", a: "Nodul semicabestan sau un dispozitiv de frânare", opts: ["Nodul opt","Nodul Bulin","Nodul pătrat"], exp: "Asigurarea la coborâre se face prin nodul semicabestan sau dispozitiv de frânare." },
+
+      // 41-50: Amaraje iarnă & specifice
+      { q: "Ce tip de amaraj se folosește pe zăpadă în sezonul de iarnă?", a: "Amaraj în triunghi cu piloți de zăpadă sau gheață", opts: ["Amaraj cu nuci","Amaraj cu pitoaie clasice","Amaraj cu tendoare"], exp: "Pe zăpadă se folosesc amaraje în triunghi cu piloți de zăpadă sau gheață." },
+      { q: "Unde se face bucla de ancorare la amarajul în triunghi pe zăpadă?", a: "La nivelul stratului de zăpadă", opts: ["La suprafața zăpezii","La 1 m deasupra zăpezii","La baza stratului de zăpadă"], exp: "Bucla de ancorare se face la nivelul stratului de zăpadă." },
+      { q: "Ce combinații de materiale se pot folosi la amarajul în triunghi pe zăpadă?", a: "Piloți de zăpadă cu piolet, schiuri cu piolet etc.", opts: ["Doar pitoaie clasice","Doar nuci","Doar tendoare"], exp: "Se pot folosi diverse combinații: piloți de zăpadă cu piolet, schiuri cu piolet etc." },
+      { q: "Ce este pioletul în salvarea montană de iarnă?", a: "Un instrument de alpinism pentru deplasare și asigurare pe zăpadă/gheață", opts: ["Un tip de targă","Un tip de coardă","Un tip de blocator"], exp: "Pioletul este un instrument esențial pentru deplasarea și asigurarea pe zăpadă și gheață." },
+      { q: "Ce sunt coltarii în salvarea montană de iarnă?", a: "Dispozitive metalice cu colți fixate pe bocanci pentru deplasare pe gheață/zăpadă", opts: ["Tipuri de pitoaie","Tipuri de blocatoare","Tipuri de carabiniere"], exp: "Coltarii sunt dispozitive metalice cu colți pentru deplasare pe gheață și zăpadă." },
+      { q: "Ce rol au betele de schi în salvarea montană?", a: "Rol important atât pe pârtie cât și în deplasările în zone montane", opts: ["Doar pentru schi","Doar pentru sondare","Doar pentru comunicații"], exp: "Betele de schi au un rol important atât pe pârtie cât și în deplasările montane." },
+      { q: "Ce avantaj au betele de schi de tură (telescopice)?", a: "Pot fi reglate la diferite lungimi și transportate în rucsac", opts: ["Sunt mai rezistente","Sunt mai ușoare","Sunt mai ieftine"], exp: "Betele telescopice pot fi reglate și transportate în rucsac." },
+      { q: "Ce sunt legăturile-piele de focă în salvarea montană?", a: "Materiale pentru deplasarea pe schiuri de tură în urcare", opts: ["Tipuri de corzi","Tipuri de blocatoare","Tipuri de carabiniere"], exp: "Pielea de focă se aplică pe schiuri pentru a permite urcarea pe pante." },
+      { q: "Ce sunt cuțitele de gheață în salvarea montană?", a: "Materiale pentru asigurare pe pante de gheață", opts: ["Tipuri de pitoaie","Tipuri de blocatoare","Tipuri de carabiniere"], exp: "Cuțitele de gheață sunt materiale pentru asigurare pe pante de gheață." },
+      { q: "Ce este semicoarda dinamică?", a: "O coardă mai subțire folosită în perechi la cățărarea pe două corzi", opts: ["O coardă statică mai scurtă","O coardă de polipropilenă","O buclă de chingă"], exp: "Semicoarda dinamică este o coardă mai subțire folosită în perechi." },
+
+      // 51-60: Recapitulare noduri & asigurări
+      { q: "Ce este asigurarea dinamică în salvarea montană?", a: "Asigurarea care permite filarea corzii progresiv pentru a amortiza șocul", opts: ["Asigurarea fixă într-un punct","Asigurarea cu balustradă","Autoasigurarea"], exp: "Asigurarea dinamică permite filarea progresivă a corzii pentru a amortiza șocul." },
+      { q: "Ce este autoasigurarea în salvarea montană?", a: "Asigurarea individuală a salvatorului în punctul de amaraj", opts: ["Asigurarea unui coechipier","Asigurarea cu balustradă","Asigurarea dinamică"], exp: "Autoasigurarea este asigurarea individuală a fiecărui salvator în punctul de amaraj." },
+      { q: "Este permis ca doi coechipieri să fie asigurați unul de celălalt în regrupare?", a: "Nu, nu este permis", opts: ["Da, este permis","Da, dacă au coardă dinamică","Da, dacă sunt 3 salvatori"], exp: "Nu este permis ca în regrupare coechipieri să fie asigurați unul de celălalt." },
+      { q: "Ce nod se folosește la asigurarea statică prin carabinieră?", a: "Nodul cabestan", opts: ["Nodul Prusik","Nodul Bulin","Nodul pescăresc"], exp: "Asigurarea statică prin carabinieră se face cu nodul cabestan." },
+      { q: "Ce nod se folosește la asigurarea statică cu ajutorul știftului?", a: "Nodul specific al știftului (dispozitiv de frânare)", opts: ["Nodul Prusik","Nodul Bulin","Nodul opt"], exp: "Știftul este un dispozitiv de frânare cu nod specific." },
+      { q: "Câte puncte de ancorare se recomandă la asigurarea statică?", a: "Alt punct fix decât cel de autoasigurare", opts: ["Același punct de autoasigurare","Orice punct disponibil","Minimum 3 puncte"], exp: "Asigurarea statică se face într-un alt punct fix decât cel de autoasigurare." },
+      { q: "Ce se verifică înainte de a începe rapelul?", a: "Toate echipamentele și materialele necesare", opts: ["Doar coarda","Doar carabinierele","Doar punctul de amaraj"], exp: "Înainte de rapel se verifică toate echipamentele și materialele necesare." },
+      { q: "Care este poziția corpului corectă în rapel?", a: "Lăsat pe spate, cu fața la perete, privirea în jos, picioarele în V", opts: ["Cu fața la vale","Cu spatele la perete","Vertical, cu picioarele lipite"], exp: "Poziția corectă în rapel: lăsat pe spate, față la perete, privire în jos, picioare în V." },
+      { q: "Cum se oprește în rapel prin metoda cu coarda pe pulpă?", a: "Coarda din spate se trece peste piciorul din dreptul mâinii, formând 3 bucle strânse pe pulpă", opts: ["Se blochează carabiniera","Se face un nod Prusik","Se trage coarda în față"], exp: "Oprirea în rapel: coarda din spate se trece peste picior formând 3 bucle pe pulpă." },
+      { q: "Cum se oprește în rapel prin metoda cu nodul opt?", a: "Coarda din spate se aduce deasupra sistemului de frânare și se face un nod opt simplu cu buclă", opts: ["Se blochează carabiniera","Se face un nod Prusik","Se trage coarda în față"], exp: "Oprirea în rapel: coarda din spate deasupra frânei + nod opt simplu cu buclă." },
+    ]
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // MODULUL 3 – Rapel, tracțiune și transport accidentați (60 întrebări)
+  // ─────────────────────────────────────────────────────────────────
+  {
+    title: "Modulul 3 – Rapel, tracțiune și transport accidentați",
+    questions: [
+      // 1-10: Rapel
+      { q: "Ce este rapelul în salvarea montană?", a: "Tehnica de alunecare pe una sau două corzi", opts: ["Tehnica de urcare pe coardă","Tehnica de transport al accidentaților","Tehnica de amarare"], exp: "Rapelul este tehnica de alunecare pe una sau două corzi." },
+      { q: "Care sunt cele 3 procedee tehnice de rapel?", a: "Pe coborâtorul autoblocant, pe opt, Dülfer", opts: ["Prusik, Cabestan, Opt","Static, Dinamic, Mixt","Simplu, Dublu, Triplu"], exp: "Cele 3 procedee: rapelul pe coborâtor autoblocant, pe opt și Dülfer." },
+      { q: "Ce condiție trebuie îndeplinită pentru rapelul pe coborâtorul autoblocant?", a: "Echipamentul să fie în perfectă stare de funcționare", opts: ["Coarda să fie dinamică","Peretele să fie vertical","Salvatorul să fie asigurat de jos"], exp: "Rapelul pe autoblocant necesită echipament în perfectă stare de funcționare." },
+      { q: "Ce asigurare este obligatorie la rapelul pe opt?", a: "Asigurarea cu coardă de sus sau cu buclă Prusik", opts: ["Nicio asigurare suplimentară","Asigurarea cu balustradă","Asigurarea cu blocator mecanic"], exp: "La rapelul pe opt, asigurarea cu coardă de sus sau buclă Prusik este obligatorie." },
+      { q: "Ce caracteristică are rapelul Dülfer față de celelalte?", a: "Nu necesită nicio buclă, carabinieră sau centură", opts: ["Este cel mai rapid","Este cel mai sigur","Necesită echipament special"], exp: "Rapelul Dülfer nu necesită nicio buclă, carabinieră sau centură." },
+      { q: "Cum se introduc corzile în rapelul Dülfer?", a: "Între picioare, pe sub pulpa piciorului stâng, diagonal peste piept, pe umărul drept și prin spate la mâna stângă", opts: ["Prin carabinieră","Prin optul de coborâre","Prin blocator"], exp: "Rapelul Dülfer: corzi între picioare, sub pulpă, diagonal peste piept, umăr drept, mâna stângă." },
+      { q: "Ce se face cu capetele corzilor de rapel la rapelul pe două corzi?", a: "Se leagă capetele corzilor de rapel (recuperarea se face prin tragere de jos)", opts: ["Se lasă libere","Se fixează de amaraj","Se taie"], exp: "La rapelul pe două corzi se leagă capetele, iar recuperarea se face prin tragere de jos." },
+      { q: "Ce se montează pe coarda de rapel înainte de coborâre?", a: "Coborâtorul sau optul (și bucla Prusik de autosigurare)", opts: ["Doar carabiniera","Doar blocatorul","Doar nodul Prusik"], exp: "Pe coarda de rapel se montează coborâtorul sau optul, plus bucla Prusik de autosigurare." },
+      { q: "Ce este tehnica de coborâre (lansare) în salvarea montană?", a: "Coborârea salvatorului pe perete, asigurat de sus, cu mâinile libere", opts: ["Rapelul clasic","Transportul accidentaților","Cățărarea artificială"], exp: "Lansarea permite salvatorului să coboare cu mâinile libere, asigurat de sus." },
+      { q: "Când NU este indicat procedeul de coborâre (lansare)?", a: "Când zgomotele din zonă împiedică comunicarea între salvatori", opts: ["Când peretele este vertical","Când coarda este dinamică","Când sunt mai mult de 2 salvatori"], exp: "Lansarea nu este indicată când zgomotele împiedică comunicarea între salvatori." },
+
+      // 11-20: Sisteme de tracțiune
+      { q: "La scripetele simplu (gradul I), care este relația dintre forța de tracțiune F și greutatea G?", a: "F = G", opts: ["F = G/2","F = G/3","F = 2G"], exp: "La scripetele simplu: F = G (forța egală cu greutatea)." },
+      { q: "La scripetele de gradul II, care este relația dintre forța de tracțiune F și greutatea G?", a: "F = G/2", opts: ["F = G","F = G/3","F = G/4"], exp: "La scripetele de gradul II: F = G/2." },
+      { q: "La scripetele de gradul III, care este relația dintre forța de tracțiune F și greutatea G?", a: "F = G/3", opts: ["F = G","F = G/2","F = G/4"], exp: "La scripetele de gradul III: F = G/3." },
+      { q: "Câte role simple sunt necesare la scripetele de gradul II?", a: "2 role simple", opts: ["1 rolă simplă","3 role simple","4 role simple"], exp: "Scripetele de gradul II necesită 2 role simple." },
+      { q: "Ce materiale sunt necesare la scripetele simplu (gradul I)?", a: "Coardă, blocator, 1 rolă simplă", opts: ["Coardă, 2 role simple","Coardă, 2 blocatoare, 2 role","Coardă, troliu"], exp: "Scripetele simplu necesită: coardă, blocator și 1 rolă simplă." },
+      { q: "Ce materiale sunt necesare la scripetele de gradul III cu tracțiune opusă greutății?", a: "Coardă, 2 blocatoare (sau nod Prusik), 2 role simple", opts: ["Coardă, 1 blocator, 3 role","Coardă, 2 blocatoare, 3 role","Coardă, troliu"], exp: "Scripetele gradul III opus: coardă, 2 blocatoare (sau Prusik), 2 role simple." },
+      { q: "Ce materiale sunt necesare la scripetele de gradul III cu tracțiune în direcția greutății?", a: "Coardă, blocator (sau nod Prusik), 3 role simple", opts: ["Coardă, 2 blocatoare, 2 role","Coardă, 1 blocator, 2 role","Coardă, troliu"], exp: "Scripetele gradul III în direcția greutății: coardă, blocator (sau Prusik), 3 role simple." },
+      { q: "Ce este troliul în salvarea montană?", a: "Un dispozitiv mecanic de tracțiune", opts: ["Un tip de targă","Un tip de blocator","Un tip de coardă"], exp: "Troliul este un dispozitiv mecanic de tracțiune folosit în operațiunile de salvare." },
+      { q: "Cum se poate realiza un sistem de troliu din blocatoare și role?", a: "Printr-un ansamblu de blocatoare cu role", opts: ["Prin legarea mai multor corzi","Prin folosirea a 3 pitoaie","Prin folosirea a 2 carabiniere"], exp: "Un sistem de troliu se poate realiza dintr-un ansamblu de blocatoare cu role." },
+      { q: "Ce materiale sunt necesare pentru funicular (2 corzi)?", a: "2 role de 30 KN, 2 bucle ~120 cm, 2 corzi (40-100 m) Ø10 mm, 2 Prusik, 14 carabiniere, targă", opts: ["1 coardă, 1 rolă, 1 blocator","3 corzi, 3 role, 3 blocatoare","2 corzi, 4 role, 4 blocatoare"], exp: "Funicularul necesită: 2 role 30 KN, 2 bucle, 2 corzi, 2 Prusik, 14 carabiniere, targă." },
+
+      // 21-30: Transport accidentați
+      { q: "Care sunt fazele operațiunilor de transport al accidentaților din pereți verticali?", a: "Deplasarea la locul accidentului, acordarea primului ajutor, instalarea și transportul", opts: ["Alarma, deplasarea, recuperarea","Localizarea, extragerea, transportul","Evaluarea, tratarea, evacuarea"], exp: "Fazele sunt: deplasarea la locul accidentului, primul ajutor, instalarea și transportul." },
+      { q: "Prin câte metode se poate face deplasarea la locul accidentului din perete?", a: "3 metode", opts: ["2 metode","4 metode","5 metode"], exp: "Deplasarea se poate face prin 3 metode: de sus în jos, de jos în sus, sau combinat." },
+      { q: "Care sunt cele 3 metode de deplasare la locul accidentului din perete?", a: "De sus în jos prin rapel, de jos în sus prin cățărare, o echipă prin rapel și una prin cățărare", opts: ["Cu elicopterul, pe jos, prin rapel","Cu targa, prin rapel, prin cățărare","Cu funicularul, prin rapel, prin cățărare"], exp: "Cele 3 metode: rapel de sus, cățărare de jos, sau combinat." },
+      { q: "Care este numărul minim de salvatori care se deplasează la locul accidentului din perete?", a: "Minimum 3 salvatori", opts: ["1 salvator","2 salvatori","4 salvatori"], exp: "Numărul salvatorilor nu trebuie să fie mai mic de 3." },
+      { q: "Ce este transportul accidentaților din surplombă?", a: "Una dintre cele mai grele intervenții pentru o echipă de salvare", opts: ["Cea mai ușoară intervenție","O intervenție de rutină","O intervenție de nivel mediu"], exp: "Transportul din surplombă este una dintre cele mai grele intervenții." },
+      { q: "Ce este sistemul Pendul în salvarea montană?", a: "Sistemul de traversare a unei pante cu înclinație mai mare de 30° cu targa", opts: ["Un sistem de rapel","Un sistem de tracțiune verticală","Un sistem de amarare"], exp: "Sistemul Pendul este recomandat pentru traversarea pantelor peste 30° cu targa." },
+      { q: "Ce este funicularul în salvarea montană?", a: "Un sistem de transport al tărgii pe o coardă întinsă între două puncte", opts: ["Un tip de troliu","Un tip de rapel","Un tip de amaraj"], exp: "Funicularul este un sistem de transport al tărgii pe o coardă întinsă." },
+      { q: "Ce este bucla reglabilă în salvarea montană?", a: "Un dispozitiv de reglare a lungimii în sistemele de transport", opts: ["Un tip de nod","Un tip de carabinieră","Un tip de piton"], exp: "Bucla reglabilă este un dispozitiv de reglare a lungimii în sistemele de transport." },
+      { q: "Ce materiale se folosesc pentru bucla reglabilă?", a: "Buclă din coardă ~2 m (Ø9-10,5 mm), carabinieră expres 22 KN, blocator fără mâner, carabinieră cu siguranță", opts: ["Coardă statică, 2 carabiniere","Coardă dinamică, 1 carabinieră","Buclă de chingă, 2 pitoaie"], exp: "Bucla reglabilă: buclă 2m, carabinieră expres 22 KN, blocator fără mâner, carabinieră cu siguranță." },
+      { q: "Ce obligație au salvatorii la urcare și coborâre cu targa?", a: "Trecerea corzilor de asigurare printr-un sistem de blocare (nod Prusik sau blocator)", opts: ["Să fie asigurați unul de celălalt","Să folosească coardă dinamică","Să comunice prin radio"], exp: "La urcare și coborâre cu targa, corzile de asigurare trebuie trecute printr-un sistem de blocare." },
+
+      // 31-40: Salvare cu elicopterul & zone alpine
+      { q: "Care sunt zonele alpine greu accesibile în salvarea montană?", a: "Văi cu abrupturi stâncoase, creste stâncoase, versanți abrupți", opts: ["Pârtiile de schi","Potecile turistice","Drumurile forestiere"], exp: "Zonele greu accesibile sunt: văi cu abrupturi, creste stâncoase, versanți abrupți." },
+      { q: "Ce exemple de zone alpine greu accesibile sunt menționate în manual?", a: "Bucegi, Piatra Craiului, Făgăraș, Retezat", opts: ["Apuseni, Ceahlău, Rarău","Semenic, Parâng, Cindrel","Vlădeasa, Bihor, Gilău"], exp: "Exemplele menționate sunt: Bucegi, Piatra Craiului, Făgăraș, Retezat." },
+      { q: "Care sunt fazele pregătitoare ale unei acțiuni de salvare în zone alpine greu accesibile?", a: "Primirea apelului, localizarea, organizarea grupelor, alegerea drumului, alegerea materialelor, deplasarea", opts: ["Alarma, deplasarea, recuperarea","Evaluarea, tratarea, evacuarea","Localizarea, extragerea, transportul"], exp: "Fazele pregătitoare includ: primirea apelului, localizarea, organizarea, alegerea drumului și materialelor." },
+      { q: "Ce trebuie stabilit în timpul deplasării spre accident?", a: "Traseul de retragere cu accidentatul", opts: ["Numărul de salvatori","Tipul de targă","Tipul de coardă"], exp: "În timpul deplasării se stabilește traseul de retragere cu accidentatul." },
+      { q: "Ce avantaj are transportul cu elicopterul față de cel terestru?", a: "Avantaj covârșitor când condițiile meteo sunt favorabile", opts: ["Este mai ieftin","Este mai sigur întotdeauna","Nu depinde de vreme"], exp: "Transportul cu elicopterul are avantaj covârșitor când condițiile meteo sunt favorabile." },
+      { q: "Ce este sistemul 'Coarda super lungă' în salvarea cu elicopterul?", a: "O tehnică de salvare cu elicopterul prezentată la congresul CISA-IKAR 2006", opts: ["Un tip de coardă specială","Un sistem de rapel","Un sistem de funicular"], exp: "Coarda super lungă este o tehnică de salvare cu elicopterul prezentată la CISA-IKAR 2006." },
+      { q: "Ce este sistemul 'Coarda lungă' în salvarea cu elicopterul?", a: "Un sistem de salvare cu elicopterul folosind o coardă lungă de ghidare", opts: ["Un tip de coardă statică","Un sistem de rapel","Un sistem de funicular"], exp: "Coarda lungă este un sistem de salvare cu elicopterul cu coardă de ghidare." },
+      { q: "Ce este targa cu roată (UT 2000) în salvarea montană?", a: "O targă universală cu roată pentru transport în teren variat", opts: ["O targă rigidă fără roată","O targă improvizată","O saltea cu vacuum"], exp: "UT 2000 este o targă universală cu roată pentru transport în teren variat." },
+      { q: "Ce este targa canadiană în salvarea montană?", a: "Un tip de targă pentru transportul accidentaților", opts: ["Un tip de sac de transport","Un tip de ham","Un tip de saltea"], exp: "Targa canadiană este un tip de targă pentru transportul accidentaților." },
+      { q: "Ce este sacul de transport TIROMONT?", a: "Un sac/ham de transport al accidentaților", opts: ["Un tip de targă rigidă","Un tip de blocator","Un tip de coardă"], exp: "TIROMONT este un sac/ham de transport al accidentaților." },
+
+      // 41-50: Organizare acțiuni de salvare
+      { q: "Ce este faza I a operațiunilor de salvare din avalanșă?", a: "Acțiunea imediată – trimiterea rapidă a colonelor cu sonde, lopete și echipament", opts: ["Reducerea vieții și transportul victimei","Recuperarea cadavrelor","Organizarea bazei de operațiuni"], exp: "Faza I este acțiunea imediată cu trimiterea rapidă a colonelor echipate." },
+      { q: "Ce este faza II a operațiunilor de salvare din avalanșă?", a: "Reducerea vieții și transportul victimei", opts: ["Acțiunea imediată","Recuperarea cadavrelor","Organizarea bazei de operațiuni"], exp: "Faza II constă în reducerea vieții și transportul victimei." },
+      { q: "Cine sunt conducătorii de coloană în operațiunile de salvare?", a: "Ghizi experimentați care conduc coloane de 5-10 profesioniști sau voluntari", opts: ["Medici de urgență","Piloți de elicopter","Ofițeri de poliție"], exp: "Conducătorii de coloană sunt ghizi experimentați care conduc coloane de salvare." },
+      { q: "Ce responsabilitate are conducătorul de coloană?", a: "Este responsabil pentru oamenii săi până la terminarea acțiunii", opts: ["Doar pentru echipamentul echipei","Doar pentru comunicații","Doar pentru primul ajutor"], exp: "Conducătorul de coloană este responsabil pentru oamenii săi până la terminarea acțiunii." },
+      { q: "Ce este prima coloană de salvare?", a: "Trebuie constituită din profesioniști stationați la terminalul superior", opts: ["Voluntari echipați cu sonde","Medici și paramedici","Piloți și tehnicieni"], exp: "Prima coloană trebuie constituită din profesioniști stationați la terminalul superior." },
+      { q: "Ce trebuie să aibă fiecare salvator montan la plecarea în acțiune?", a: "Toate materialele necesare fiecărui tip de operațiune", opts: ["Doar coarda și carabinierele","Doar trusa medicală","Doar radioul"], exp: "La plecarea în acțiune, fiecare salvator trebuie să aibă toate materialele necesare." },
+      { q: "Ce se verifică înainte de traversarea unei pante cu targa?", a: "Că panta nu prezintă pericolul formării de avalanșe", opts: ["Că panta are mai puțin de 10°","Că există potecă turistică","Că există semnal radio"], exp: "Înainte de traversare se verifică dacă panta prezintă pericol de avalanșă." },
+      { q: "Câți salvatori asigură poziția corectă a tărgii la traversare?", a: "3 salvatori montani, asigurați de laterala din aval", opts: ["1 salvator","2 salvatori","4 salvatori"], exp: "3 salvatori montani asigurați de laterala din aval asigură poziția corectă a tărgii." },
+      { q: "Ce face salvatorul de la capătul final al traversului?", a: "Asigură mijlocul de transport prin filarea corzii", opts: ["Trage coarda","Fixează amarajul","Acordă primul ajutor"], exp: "Salvatorul de la capătul final asigură mijlocul de transport prin filarea corzii." },
+      { q: "Ce se face dacă traversul este mai mare decât lungimea corzii?", a: "Se repetă procedeul descris", opts: ["Se renunță la traversare","Se improvizează o coardă","Se cheamă elicopterul"], exp: "Dacă traversul depășește lungimea corzii, procedeul se repetă." },
+
+      // 51-60: Tehnici specifice transport
+      { q: "Ce se face la transportul accidentaților din surplombă – Cazul I?", a: "Doi salvatori coboară la 2 dispozitive separate, legați între ei, unul rămâne la extremitatea surplombei", opts: ["Un singur salvator coboară","Trei salvatori coboară simultan","Se folosește elicopterul"], exp: "Cazul I: 2 salvatori la dispozitive separate, unul rămâne la extremitatea surplombei." },
+      { q: "Ce se face la transportul accidentaților din surplombă – Cazul II?", a: "Un salvator coboară la baza surplombei, aruncă o buclă accidentaților, se autoasigură și coboară la acesta", opts: ["Doi salvatori coboară simultan","Se folosește funicularul","Se cheamă elicopterul"], exp: "Cazul II: un salvator coboară, aruncă buclă, se autoasigură și ajunge la accidentat." },
+      { q: "Ce este pendularea în salvarea montană?", a: "Deplasarea laterală a salvatorului sau tărgii prin oscilare pe coardă", opts: ["Un tip de rapel vertical","Un tip de tracțiune","Un tip de amaraj"], exp: "Pendularea este deplasarea laterală prin oscilare pe coardă." },
+      { q: "Ce este prelungirea frânghiilor în salvarea montană?", a: "Tehnica de înnădire a corzilor pentru a mări lungimea disponibilă", opts: ["Un tip de nod de amarare","Un tip de rapel","Un tip de tracțiune"], exp: "Prelungirea frânghiilor este tehnica de înnădire pentru a mări lungimea disponibilă." },
+      { q: "Ce este transportul accidentaților pe pârtiile de schi?", a: "O activitate specifică salvatorilor montani pe pârtiile omologate", opts: ["O activitate de agrement","O activitate de antrenament","O activitate de cercetare"], exp: "Transportul pe pârtii este o activitate specifică salvatorilor pe pârtiile omologate." },
+      { q: "Ce este organizarea acțiunilor de salvare pe pârtiile de schi amenajate?", a: "Activitatea de prevenire, salvare și transport pe pârtiile omologate", opts: ["Activitatea de patrulare","Activitatea de antrenament","Activitatea de control al echipamentului"], exp: "Organizarea pe pârtii include prevenirea, salvarea și transportul pe pârtiile omologate." },
+      { q: "Ce se face cu accidentatul în zona de regrupare dacă este necesară continuarea coborârii?", a: "Accidentatul este preluat de o altă echipă, iar cei doi salvatori sunt recuperați", opts: ["Accidentatul coboară singur","Toți coboară împreună","Se cheamă elicopterul"], exp: "Din regrupare, accidentatul este preluat de altă echipă, salvatorii sunt recuperați." },
+      { q: "Ce este forța de tracțiune în coardă și în punctele de ancorare?", a: "Forța care acționează asupra corzii și punctelor de ancorare la tracțiune", opts: ["Greutatea accidentaților","Forța vântului","Forța gravitațională"], exp: "Forța de tracțiune acționează asupra corzii și punctelor de ancorare." },
+      { q: "Ce este transportul târgii pe funicular?", a: "Transportul tărgii pe o coardă întinsă între două puncte fixe", opts: ["Transportul tărgii pe pârtie","Transportul tărgii cu elicopterul","Transportul tărgii pe potecă"], exp: "Transportul pe funicular se face pe o coardă întinsă între două puncte fixe." },
+      { q: "Ce este transportul accidentaților cu targa cu roată în teren variat?", a: "Transportul cu targa UT 2000 sau similare în teren accidentat", opts: ["Transportul pe pârtii de schi","Transportul cu elicopterul","Transportul pe potecă turistică"], exp: "Transportul cu targa cu roată se face în teren variat, accidentat." },
+    ]
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // MODULUL 4 – Avalanșe: clasificare, cauze și salvare (60 întrebări)
+  // ─────────────────────────────────────────────────────────────────
+  {
+    title: "Modulul 4 – Avalanșe: clasificare, cauze și salvare",
+    questions: [
+      // 1-10: Unde se formează avalanșele
+      { q: "Pe ce tip de pante se formează cel mai frecvent avalanșele?", a: "Pe pante cu înclinare cuprinsă între 25-35 grade", opts: ["Pe pante cu înclinare sub 10 grade","Pe pante cu înclinare peste 60 grade","Pe pante orizontale"], exp: "Avalanșele se formează frecvent pe pante cu înclinare de 25-35 grade." },
+      { q: "Unde NU se formează avalanșele?", a: "Pe pante cu vegetație densă (păduri, jnepeni)", opts: ["Pe pante golaşe","Pe pante cu grohotișuri","Pe pante cu cornișe"], exp: "Pădurile și jnepenii reduc riscul de avalanșă." },
+      { q: "Care sunt locurile unde se formează avalanșele conform manualului?", a: "Pante ierboase/grohotișuri 25-35°, pante abrupte cu trepte, pereți verticali cu cornișe, pante cu culoare, pante fără păduri", opts: ["Doar pe pante nordice","Doar pe pante sudice","Doar pe pante cu gheață"], exp: "Avalanșele se formează în 5 tipuri de locuri specifice descrise în manual." },
+      { q: "Ce tip de teren favorizează avalanșele de tip 'cataractă'?", a: "Pante abrupte cu trepte sau platforme de depozitare a zăpezii", opts: ["Pante uniforme","Pante cu păduri","Pante cu grohotișuri mici"], exp: "Avalanșele de cataractă se formează pe pante abrupte cu trepte sau platforme." },
+      { q: "Ce tip de teren favorizează formarea cornișelor sau balcoanelor de zăpadă?", a: "Pereți aproape verticali, opuși direcției dominante a vântului", opts: ["Pante cu vegetație","Pante cu grohotișuri","Văi largi"], exp: "Cornișele se formează pe pereți verticali opuși direcției dominante a vântului." },
+      { q: "Ce rol au pădurile și jnepenii în prevenirea avalanșelor?", a: "Reduc riscul de formare a avalanșelor", opts: ["Cresc riscul de avalanșă","Nu au niciun efect","Canalizează avalanșele"], exp: "Pădurile și jnepenii reduc riscul de formare a avalanșelor." },
+      { q: "Ce este un culoar de avalanșă?", a: "O vale mediană sau culcare pe care se deplasează avalanșa", opts: ["Un tip de avalanșă","Un tip de zăpadă","Un tip de teren plat"], exp: "Culoarul este o vale mediană sau culcare pe care se deplasează avalanșa." },
+      { q: "Ce pante sunt predispuse la avalanșe de tip 'versant'?", a: "Pante deschise, uniforme", opts: ["Pante cu păduri","Pante cu culoare","Pante cu trepte"], exp: "Avalanșele de versant se produc pe pante deschise și uniforme." },
+      { q: "La ce altitudine relativă sunt mai frecvente avalanșele?", a: "Depinde de altitudine (temperatura, radiații, vânt, precipitații, vegetație)", opts: ["Doar la altitudini mici","Doar la altitudini mari","La orice altitudine în mod egal"], exp: "Factorii de avalanșă variază în funcție de altitudine." },
+      { q: "Ce tip de teren canalizează avalanșele?", a: "Culoare și văi", opts: ["Pante deschise","Creste","Platouri"], exp: "Culoarele și văile canalizează avalanșele." },
+
+      // 11-20: Cauzele avalanșelor
+      { q: "Care sunt principalele cauze care produc avalanșele?", a: "Înălțimea mare a zăpezii, temperatura solului, vântul, lipsa de coeziune, cutremure, mișcări externe", opts: ["Doar temperatura","Doar vântul","Doar precipitațiile"], exp: "Avalanșele au cauze multiple: zăpadă acumulată, temperatură, vânt, coeziune, cutremure, mișcări externe." },
+      { q: "Cum produce vântul avalanșe?", a: "Prin presiunea sa dă un impuls stratului de zăpadă aflat în echilibru", opts: ["Prin topirea zăpezii","Prin compactarea zăpezii","Prin răcirea zăpezii"], exp: "Vântul produce avalanșe prin presiunea exercitată asupra stratului de zăpadă." },
+      { q: "Ce mișcări externe pot declanșa avalanșe?", a: "Rostogolirea unei stânci, tipetele turiștilor, trecerea unui turist, detonarea armelor de foc", opts: ["Doar cutremurele","Doar vântul","Doar ploaia"], exp: "Mișcările externe includ: stânci, tipete, trecerea persoanelor, detonații." },
+      { q: "Cum produce temperatura solului avalanșe?", a: "Topind baza păturilor de zăpadă o desprinde de pământ, făcând-o să alunece pe un strat mobil de apă", opts: ["Prin înghețarea zăpezii","Prin evaporarea zăpezii","Prin compactarea zăpezii"], exp: "Temperatura solului topește baza zăpezii, creând un strat lubrifiant de apă." },
+      { q: "Ce este lipsa de coeziune ca factor de avalanșă?", a: "Lipsa de legătură dintre cristalele ce formează pătura de zăpadă", opts: ["Lipsa de apă în zăpadă","Lipsa de vânt","Lipsa de temperatură"], exp: "Lipsa de coeziune înseamnă absența legăturii dintre cristalele de zăpadă." },
+      { q: "Ce este lipsa de sudură ca factor de avalanșă?", a: "Lipsa de legătură dintre păturile de zăpadă cu vechimi diferite", opts: ["Lipsa de apă în zăpadă","Lipsa de vânt","Lipsa de temperatură"], exp: "Lipsa de sudură înseamnă că un strat de zăpadă alunecă pe altul mai vechi." },
+      { q: "Ce este înălțimea mare de zăpadă ca factor de avalanșă?", a: "Centrul de greutate al stratului de zăpadă ajunge în echilibru instabil", opts: ["Zăpada devine mai densă","Zăpada devine mai uscată","Zăpada devine mai rece"], exp: "Înălțimea mare aduce centrul de greutate al stratului în echilibru instabil." },
+      { q: "Ce este radiatia solară ca factor de avalanșă?", a: "Influențează avalanșele mai ales pe pantele expuse la soare", opts: ["Nu are niciun efect","Stabilizează zăpada","Compactează zăpada"], exp: "Radiația solară influențează avalanșele pe pantele expuse." },
+      { q: "Ce este radiația termică ca factor de avalanșă?", a: "Răcirea temperaturii zăpezii la umbră și noaptea duce la formarea gheții în profunzime (stratificare)", opts: ["Încălzirea zăpezii","Topirea zăpezii","Evaporarea zăpezii"], exp: "Radiația termică răcește zăpada noaptea, ducând la stratificare și formare de gheață." },
+      { q: "Ce este depunerea de zăpadă proaspătă ca factor de avalanșă?", a: "Se măsoară zilnic: zăpadă proaspătă, strat tasit în mai multe zile și grosimea totală", opts: ["Doar grosimea totală","Doar zăpada proaspătă","Doar stratul tasit"], exp: "Depunerea de zăpadă proaspătă se măsoară în 3 valori: zilnică, tasată și totală." },
+
+      // 21-30: Tipuri de avalanșe
+      { q: "Câte grupe de avalanșe există după formă și modul de naștere?", a: "5 grupe", opts: ["3 grupe","4 grupe","6 grupe"], exp: "Avalanșele se împart în 5 grupe după formă și modul de naștere." },
+      { q: "Ce sunt avalanșele de ninsoare afânată?", a: "Avalanșe produse în timpul ninsorilor abundente, pe pante de 25-35°, ca o masă de pulbere", opts: ["Avalanșe de primăvară","Avalanșe în scânduri","Avalanșe în cornișe"], exp: "Avalanșele de ninsoare afânată se produc în timpul ninsorilor abundente ca o masă de pulbere." },
+      { q: "Ce sunt avalanșele de fund sau compacte (de primăvară)?", a: "Avalanșe frecvente în perioadele calde sau primăvara, când zăpada de jos se topește", opts: ["Avalanșe de ninsoare afânată","Avalanșe în scânduri","Avalanșe în cornișe"], exp: "Avalanșele de fund se produc primăvara când zăpada de jos se topește." },
+      { q: "Ce sunt avalanșele în scânduri de zăpadă?", a: "Avalanșe formate pe terenuri cu înclinare mică, din structuri de zăpadă diferite suprapuse", opts: ["Avalanșe de ninsoare afânată","Avalanșe de fond","Avalanșe în cornișe"], exp: "Avalanșele în scânduri se formează pe teren cu înclinare mică, din straturi diferite de zăpadă." },
+      { q: "Ce sunt avalanșele în bulgări de zăpadă (de cataractă)?", a: "Avalanșe pe pante abrupte cu trepte sau platforme de depozitare", opts: ["Avalanșe de ninsoare afânată","Avalanșe de fond","Avalanșe în scânduri"], exp: "Avalanșele de cataractă se produc pe pante abrupte cu trepte sau platforme." },
+      { q: "Ce sunt avalanșele în cornișă sau balcoane?", a: "Avalanșe formate pe pereți verticali opuși direcției dominante a vântului", opts: ["Avalanșe de ninsoare afânată","Avalanșe de fond","Avalanșe în scânduri"], exp: "Avalanșele în cornișă se formează pe pereți verticali opuși direcției vântului." },
+      { q: "Care tip de avalanșă este cel mai periculos și mai greu de prevăzut?", a: "Avalanșa de ninsoare afânată", opts: ["Avalanșa de fond","Avalanșa în scânduri","Avalanșa în cornișe"], exp: "Avalanșa de ninsoare afânată este cea mai periculoasă și mai greu de prevăzut." },
+      { q: "Când se produc avalanșele de fond (compacte)?", a: "Când temperatura aerului este deasupra de zero grade câteva zile", opts: ["În timpul ninsorilor abundente","Noaptea, la temperaturi scăzute","La vânt puternic"], exp: "Avalanșele de fond se produc când temperatura depășește zero grade câteva zile." },
+      { q: "Ce caracteristică are zăpada din avalanșele de fond?", a: "Este udă și grea, lipsită de aer", opts: ["Este uscată și afânată","Este pulbere","Este granulară"], exp: "Zăpada din avalanșele de fond este udă, grea și lipsită de aer." },
+      { q: "Ce semn avertizor are avalanșa în scânduri de zăpadă?", a: "Pornește cu un trăsnet puternic", opts: ["Pornește silențios","Pornește cu un vânt puternic","Pornește cu o vibrație"], exp: "Avalanșa în scânduri pornește cu un trăsnet puternic – cel mai bun avertisment." },
+
+      // 31-40: Clasificarea internațională
+      { q: "Ce este clasificarea morfologică a avalanșelor?", a: "Clasificarea bazată pe caracteristicile observabile ale avalanșei", opts: ["Clasificarea bazată pe cauze","Clasificarea bazată pe efecte","Clasificarea bazată pe frecvență"], exp: "Clasificarea morfologică se bazează pe caracteristicile observabile ale avalanșei." },
+      { q: "Ce este clasificarea genetică a avalanșelor?", a: "Clasificarea bazată pe factorii genetici care concură la producerea avalanșei", opts: ["Clasificarea bazată pe formă","Clasificarea bazată pe efecte","Clasificarea bazată pe frecvență"], exp: "Clasificarea genetică se bazează pe factorii care produc avalanșa." },
+      { q: "Ce este o avalanșă de placă moale?", a: "Stratul de zăpadă fărâmițat este moale sau foarte moale", opts: ["Stratul de zăpadă este tare","Stratul de zăpadă este granular","Stratul de zăpadă este umed"], exp: "Placa moale are stratul de zăpadă fărâmițat moale sau foarte moale." },
+      { q: "Ce este o avalanșă de placă dură?", a: "Stratul de zăpadă fărâmițat este tare, cu bucăți sau blocuri angulare", opts: ["Stratul de zăpadă este moale","Stratul de zăpadă este granular","Stratul de zăpadă este umed"], exp: "Placa dură are stratul de zăpadă fărâmițat tare, cu blocuri angulare." },
+      { q: "Ce este o avalanșă superficială?", a: "Avalanșa cu planul de alunecare în interiorul stratului de zăpadă", opts: ["Avalanșa care antrenează solul","Avalanșa de profunzime","Avalanșa de fond"], exp: "Avalanșa superficială are planul de alunecare în interiorul stratului de zăpadă." },
+      { q: "Ce este o avalanșă de profunzime (de fond)?", a: "Avalanșa cu planul de alunecare direct pe suprafața de contact cu terenul", opts: ["Avalanșa superficială","Avalanșa de placă","Avalanșa de pulbere"], exp: "Avalanșa de profunzime are planul de alunecare pe suprafața de contact cu terenul." },
+      { q: "Ce este o avalanșă de zăpadă uscată?", a: "Avalanșa fără apă liberă în zăpadă în zona fracturii", opts: ["Avalanșa cu apă liberă","Avalanșa de primăvară","Avalanșa de fond"], exp: "Avalanșa de zăpadă uscată nu are apă liberă în zona fracturii." },
+      { q: "Ce este o avalanșă de zăpadă umedă?", a: "Avalanșa cu apă liberă prezentă în zăpadă în zona fracturii", opts: ["Avalanșa fără apă liberă","Avalanșa de pulbere","Avalanșa superficială"], exp: "Avalanșa de zăpadă umedă are apă liberă prezentă în zona fracturii." },
+      { q: "Ce este o avalanșă de versant?", a: "Avalanșa cu parcurs pe o pantă deschisă (necanalizată)", opts: ["Avalanșa canalizată","Avalanșa de coridor","Avalanșa de profunzime"], exp: "Avalanșa de versant are parcurs pe o pantă deschisă, necanalizată." },
+      { q: "Ce este o avalanșă de coridor?", a: "Avalanșa cu parcurs de culoar sau strâmtoare (canalizată)", opts: ["Avalanșa de versant","Avalanșa superficială","Avalanșa de profunzime"], exp: "Avalanșa de coridor are parcurs canalizat prin culoar sau strâmtoare." },
+
+      // 41-50: Salvarea din avalanșă
+      { q: "De ce depind șansele de supraviețuire ale unei victime îngropate în avalanșă?", a: "De acțiunile întreprinse de supraviețuitori în următoarele câteva minute", opts: ["De echipamentul victimei","De temperatura aerului","De adâncimea îngropării"], exp: "Șansele de supraviețuire depind de acțiunile supraviețuitorilor în primele minute." },
+      { q: "Care este șansa statistică de a găsi în viață o victimă complet îngropată în avalanșă?", a: "1 din 5 (20%)", opts: ["1 din 2","1 din 10","1 din 20"], exp: "Statistic, există o șansă din cinci de a găsi în viață o victimă complet îngropată." },
+      { q: "Ce procedeu de căutare a victimelor din avalanșă este cel mai rapid când victima are emițător?", a: "Căutarea cu aparatul de emisie-recepție (PIEPS)", opts: ["Sondarea","Câinele de avalanșă","Căutarea vizuală"], exp: "Căutarea cu PIEPS este cel mai rapid procedeu când victima are emițător." },
+      { q: "În câte minute poate fi găsită victima cu PIEPS dacă salvatorul cunoaște procedura?", a: "10 minute de la recepționarea primului semnal", opts: ["30 minute","60 minute","5 minute"], exp: "Cu PIEPS și procedura corectă, victima poate fi găsită în 10 minute." },
+      { q: "Ce este sondarea ca metodă de căutare a victimelor din avalanșă?", a: "O metodă lentă dar utilizabilă când victima nu are emițător", opts: ["Cea mai rapidă metodă","O metodă electronică","O metodă cu câini"], exp: "Sondarea este lentă dar este singura metodă utilizabilă când victima nu are emițător." },
+      { q: "Care este spațierea salvatorilor la sondarea brută?", a: "La intervale de 75 cm, picioarele la 50 cm distanță", opts: ["La intervale de 30 cm","La intervale de 1 m","La intervale de 2 m"], exp: "La sondarea brută, salvatorii sunt la 75 cm distanță, picioarele la 50 cm." },
+      { q: "Cu câți centimetri avansează linia la sondarea brută?", a: "70 cm (un pas)", opts: ["30 cm","50 cm","1 m"], exp: "La sondarea brută, linia avansează cu 70 cm (un pas) la fiecare semnal." },
+      { q: "Care este spațierea sondelor la sondarea detaliată?", a: "25/30 cm (13 spații pe metru pătrat)", opts: ["50/75 cm","10/15 cm","1 m/1 m"], exp: "La sondarea detaliată, spațierea este de 25/30 cm, adică 13 spații pe metru pătrat." },
+      { q: "De câte ori mai mult timp necesită sondarea detaliată față de sondarea brută?", a: "De 4-5 ori mai mult", opts: ["De 2 ori mai mult","De 10 ori mai mult","Același timp"], exp: "Sondarea detaliată necesită de 4-5 ori mai mult timp decât sondarea brută." },
+      { q: "Câți oameni pot sonda o zonă de 100×100 m în 4 ore (sondare brută)?", a: "20 de oameni", opts: ["10 oameni","30 oameni","50 oameni"], exp: "20 de oameni pot sonda o zonă de 100×100 m în 4 ore la sondarea brută." },
+
+      // 51-60: Prevenire & supraviețuire
+      { q: "Ce măsuri de precauție se iau înainte de traversarea unei zone de avalanșă?", a: "Îndepărtarea curelelor de la bete, dezlegarea legăturilor de siguranță ale schiurilor", opts: ["Nimic special","Legarea schiurilor mai strâns","Purtarea căștii"], exp: "Înainte de traversare: îndepărtarea curelelor de la bete și dezlegarea legăturilor schiurilor." },
+      { q: "Ce mișcări trebuie să facă o persoană prinsă de avalanșă?", a: "Mișcări de înot pentru a rămâne la suprafață", opts: ["Să stea nemișcată","Să se rostogolească","Să sară"], exp: "Persoana prinsă de avalanșă trebuie să facă mișcări de înot pentru a rămâne la suprafață." },
+      { q: "Ce trebuie să facă turistul prins în avalanșă de ninsoare afânată?", a: "Să-și protejeze pieptul, să nu inspire zăpadă, să facă mișcări de înot, să arunce rucsacul", opts: ["Să stea nemișcat","Să strige după ajutor","Să se rostogolească"], exp: "Turistul prins în avalanșă afânată trebuie să-și protejeze pieptul și să facă mișcări de înot." },
+      { q: "Ce probabilitate de depistare are o victimă în poziție pe burtă sau pe spate la sondarea detaliată?", a: "95%", opts: ["75%","20%","50%"], exp: "Victima pe burtă sau pe spate are 95% probabilitate de depistare la sondarea detaliată." },
+      { q: "Ce probabilitate de depistare are o victimă în poziție pe o parte la sondarea detaliată?", a: "75%", opts: ["95%","20%","50%"], exp: "Victima pe o parte are 75% probabilitate de depistare la sondarea detaliată." },
+      { q: "Ce probabilitate de depistare are o victimă în poziție verticală la sondarea detaliată?", a: "20%", opts: ["95%","75%","50%"], exp: "Victima în poziție verticală are doar 20% probabilitate de depistare." },
+      { q: "Ce este sondarea brută în căutarea victimelor din avalanșă?", a: "O sondare rapidă care sacrifică exactitate pentru viteză de explorare", opts: ["O sondare lentă și precisă","O sondare cu aparate electronice","O sondare cu câini"], exp: "Sondarea brută este rapidă și sacrifică puțin din exactitate pentru viteză." },
+      { q: "Cât timp ia săparea cu mâinile și schiurile la 1,5 m adâncime?", a: "Circa o jumătate de oră", opts: ["10 minute","2 ore","5 minute"], exp: "Săparea cu mâinile și schiurile la 1,5 m adâncime durează circa o jumătate de oră." },
+      { q: "Cât timp ia săparea cu lopata alpină solidă la 1,5 m adâncime?", a: "10 minute", opts: ["30 minute","5 minute","1 oră"], exp: "Cu lopata alpină solidă, săparea la 1,5 m adâncime durează 10 minute." },
+      { q: "Ce recomandă manualul pentru practicarea schiului de tură?", a: "Grupuri de 3-4 schiori, sondă, lopată de avalanșă și aparat PIEPS", opts: ["Grupuri de 10 schiori","Doar sondă","Doar lopată"], exp: "La schiul de tură: grupuri de 3-4 schiori, sondă, lopată și PIEPS." },
+    ]
+  }
+];
+
+// =====================================================================
+// LOGICĂ QUIZ
+// =====================================================================
+let currentModule = null;
+let quizQuestions = [];
+let currentIndex = 0;
+let score = 0;
+let userAnswers = [];
+let answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz(moduleIndex) {
+  currentModule = moduleIndex;
+  const pool = modules[moduleIndex].questions;
+  quizQuestions = shuffle(pool).slice(0, 10);
+  currentIndex = 0;
+  score = 0;
+  userAnswers = [];
+  answered = false;
+
+  document.getElementById('module-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  document.getElementById('quiz-module-title').textContent = modules[moduleIndex].title;
+
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = quizQuestions[currentIndex];
+  const total = quizQuestions.length;
+
+  document.getElementById('quiz-progress-text').textContent = `Întrebarea ${currentIndex + 1} din ${total}`;
+  document.getElementById('progress-bar').style.width = `${((currentIndex) / total) * 100}%`;
+  document.getElementById('question-text').textContent = q.q;
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('feedback-box').style.display = 'none';
+
+  // Build shuffled options
+  const allOpts = shuffle([q.a, ...q.opts]);
+  const letters = ['A', 'B', 'C', 'D'];
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+
+  allOpts.forEach((opt, i) => {
+    const li = document.createElement('li');
+    li.className = 'option-item';
+    li.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+    li.addEventListener('click', () => selectAnswer(opt, q.a, q.exp));
+    list.appendChild(li);
+  });
+}
+
+function selectAnswer(selected, correct, explanation) {
+  if (answered) return;
+  answered = true;
+
+  const items = document.querySelectorAll('.option-item');
+  const isCorrect = selected === correct;
+
+  items.forEach(item => {
+    item.classList.add('disabled');
+    const text = item.querySelector('span:last-child').textContent;
+    if (text === correct) item.classList.add('correct');
+    else if (text === selected && !isCorrect) item.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback-box');
+  fb.style.display = 'block';
+  if (isCorrect) {
+    score++;
+    fb.className = 'feedback-box correct';
+    fb.innerHTML = `✅ <strong>Corect!</strong> ${explanation}`;
+  } else {
+    fb.className = 'feedback-box wrong';
+    fb.innerHTML = `❌ <strong>Greșit.</strong> Răspunsul corect este: <strong>${correct}</strong>. ${explanation}`;
+  }
+
+  userAnswers.push({ q: quizQuestions[currentIndex].q, selected, correct, isCorrect });
+  document.getElementById('next-btn').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex < quizQuestions.length) {
+    renderQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+
+  const pct = Math.round((score / 10) * 100);
+  const pass = score >= 6;
+
+  const circle = document.getElementById('score-circle');
+  circle.className = 'score-circle ' + (pass ? 'pass' : 'fail');
+  document.getElementById('score-num').textContent = score;
+
+  document.getElementById('result-title').textContent = pass ? '🎉 Test promovat!' : '📚 Mai studiază!';
+  document.getElementById('result-subtitle').textContent =
+    `Ai obținut ${score}/10 (${pct}%). ${pass ? 'Felicitări, ai trecut testul!' : 'Ai nevoie de minimum 6 răspunsuri corecte.'}`;
+
+  // Review
+  const reviewList = document.getElementById('review-list');
+  reviewList.innerHTML = '<h3 style="color:#a8d5b5;margin-bottom:16px">📋 Recapitulare răspunsuri</h3>';
+  userAnswers.forEach((ans, i) => {
+    const div = document.createElement('div');
+    div.className = 'review-item ' + (ans.isCorrect ? 'correct' : 'wrong');
+    div.innerHTML = `
+      <div class="rq"><strong>${i + 1}.</strong> ${ans.q}</div>
+      <div class="ra ${ans.isCorrect ? 'ok' : 'bad'}">Răspunsul tău: ${ans.selected}</div>
+      ${!ans.isCorrect ? `<div class="rc">✅ Corect: ${ans.correct}</div>` : ''}
+    `;
+    reviewList.appendChild(div);
+  });
+
+  document.getElementById('progress-bar').style.width = '100%';
+}
+
+function retakeQuiz() {
+  startQuiz(currentModule);
+}
+
+function goHome() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('module-screen').style.display = 'block';
+}
+</script>
+</body>
+</html>

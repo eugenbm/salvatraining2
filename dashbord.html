@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Salvamont</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-body">
+    <div class="navbar">
+        <h1>🏔️ SALVAMONT</h1>
+        <button onclick="logout()" class="btn-logout">🚪 Deconectare</button>
+    </div>
+
+    <div class="content">
+        <div class="welcome">
+            <h2>👋 Bun venit, <span id="user-name"></span>!</h2>
+            <p>Ești autentificat ca: <strong id="user-username"></strong></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
