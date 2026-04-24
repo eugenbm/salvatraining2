@@ -24,7 +24,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
         if (error) throw error;
 
-        // Salvează sesiunea
         localStorage.setItem('salvamont_session', JSON.stringify({
             id: data.user.id,
             email: data.user.email,
